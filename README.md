@@ -2,6 +2,25 @@
 
 把建筑需求书（Brief）转换成结构化空间方案，并支持 Agent 式迭代修改。
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Streamlit-FF4B4B?style=for-the-badge)](https://spatial-brief-agent.streamlit.app)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repo-181717?style=for-the-badge)](https://github.com/Chunyiyie/spatial-brief-agent)
+[![Case Study](https://img.shields.io/badge/Case_Study-Portfolio-2ea44f?style=for-the-badge)](docs/CASE_STUDY.md)
+
+> **Live Demo URL：** 若徽章链接无法打开，请在 [share.streamlit.io](https://share.streamlit.io) 复制你的 App 地址，并更新 [`docs/DEMO_URL`](docs/DEMO_URL) 与本段链接。
+
+## 在线体验
+
+- **[打开 Live Demo](https://spatial-brief-agent.streamlit.app)** — Streamlit Cloud 部署；服务端已配置 `DEEPSEEK_API_KEY`（Secrets），访客可直接 Analyze。
+- **Case Study（作品集叙事）：** [docs/CASE_STUDY.md](docs/CASE_STUDY.md)
+
+## 截图
+
+| Analyze 结果 | 邻接图 | Agent 修改 |
+|:---:|:---:|:---:|
+| ![Analyze](docs/screenshots/01-analyze-result.png) | ![Graph](docs/screenshots/02-graph-layout.png) | ![Chat](docs/screenshots/03-agent-chat.png) |
+
+抽象布局见 [`docs/screenshots/03b-abstract-layout.png`](docs/screenshots/03b-abstract-layout.png)。
+
 ## 功能
 
 - 输入自然语言建筑 Brief
@@ -55,42 +74,34 @@ DEEPSEEK_API_KEY=sk-your-key-here
 streamlit run app.py
 ```
 
-## Streamlit Cloud 部署与 Secrets
+本地排障（显示部署诊断侧栏）：`SPATIAL_BRIEF_DEBUG=1 streamlit run app.py`
 
-本仓库部署分支为 **`master`**（若本地用 `main` 开发，推送时需同步）：
+## Streamlit Cloud 部署
+
+本仓库 Cloud 跟踪分支为 **`master`**（本地 `main` 开发时同步）：
 
 ```bash
 git push origin main:master
 ```
 
-### 配置 Secrets（推荐，访客无需粘贴 Key）
+在 **share.streamlit.io → 本 App → Settings → Secrets** 配置：
 
-1. 打开 [share.streamlit.io](https://share.streamlit.io)，进入 **Workspace**。
-2. 选中 **正在访问的 App**（同一 repo 可有多个 App，Secrets **互不共享**）。
-3. 右下角 **Manage app** → **Settings** → **Secrets**（不是 GitHub 仓库里的 Settings → Secrets）。
-4. 编辑框内 **只保留一行** TOML（英文双引号）：
+```toml
+DEEPSEEK_API_KEY = "sk-your-key-here"
+```
 
-   ```toml
-   DEEPSEEK_API_KEY = "sk-your-key-here"
-   ```
+Save → Reboot。格式参考 [`.streamlit/secrets.toml.example`](.streamlit/secrets.toml.example)。
 
-5. 点击 **Save**（若有 TOML 语法错误，必须先修到能 Save）。
-6. **Reboot app**。
-7. 打开 App 左侧诊断（可选）：应看到 **`/mount/.streamlit/secrets.toml`** 体积 **大于 0**，且 **Streamlit secrets 顶层键名** 含 `DEEPSEEK_API_KEY`；主界面显示 **API Key 已就绪（.env / Streamlit Secrets）**。
-
-格式参考：[`.streamlit/secrets.toml.example`](.streamlit/secrets.toml.example)
-
-### 常见误区
+### 部署排障（Troubleshooting）
 
 | 现象 | 原因 |
 |------|------|
 | `.streamlit/secrets.toml` 0B，`st.secrets` 为空 | Cloud 控制台 Secrets 未 Save 成功，或 Save 在了别的 App |
 | 填在 GitHub → Repository → Secrets | 仅用于 GitHub Actions，**不会**注入 Streamlit App |
-| 改了代码但 Cloud 仍是旧行为 | 确认部署分支为 `master`，并 Reboot |
+| 改了代码但 Cloud 仍是旧行为 | 确认 branch=`master`，并 Reboot |
+| 诊断中 `/mount/.streamlit/secrets.toml` 不存在 | 尚未在 **Streamlit App** Settings 中 Save Secrets |
 
-### 备用方案
-
-若暂时无法让 Cloud Secrets 生效，可在 App 左侧 **「备用：手动粘贴 API Key」** 中粘贴 Key（仅当前浏览器会话，不落库）。
+开发模式下可设 `SPATIAL_BRIEF_DEBUG=1` 查看侧栏诊断信息。
 
 ## 项目结构
 
@@ -104,8 +115,13 @@ core/
   settings.py       # API Key / Secrets 加载
   visualize.py      # 关系图
   layout.py         # 抽象布局
-docs/CASE_STUDY.md  # 案例说明
+docs/
+  CASE_STUDY.md     # Portfolio 案例
+  screenshots/      # README 用截图
+  DAY_12_EXPORT.md  # Day 12 自学指南（导出功能）
 ```
+
+- **Live Demo：** https://spatial-brief-agent.streamlit.app（见 [`docs/DEMO_URL`](docs/DEMO_URL)）
 
 ## License
 

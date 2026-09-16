@@ -19,6 +19,8 @@
 - 设计师负责：决策、迭代、修正
 
 ## Architecture
+
+```
 User Brief
     ↓
 LLM (DeepSeek) — 理解需求，输出 JSON
@@ -36,6 +38,7 @@ Visualization — 关系图 + 抽象布局
 Agent Loop — 用户修改 → 重算 → 刷新
     ↓
 Designer
+```
 
 ## Key Features
 
@@ -47,31 +50,49 @@ Designer
 ## Demo Scenario
 
 **输入 Brief：**
+
 > 一个 5,000㎡ 的社区中心，服务儿童、老年人和家庭，包含图书馆、咖啡厅、儿童活动区、老年人活动区、多功能房间、户外公共空间。
 
 **系统输出：**
+
 - 6 个空间的结构化清单（名称、面积、用途）
-- 15 条空间邻接关系（close / medium / far / avoid）
+- 多条空间邻接关系（close / medium / far / avoid）
 - 规则检查（如：图书馆与儿童活动区应为 avoid）
 - 空间关系图 + 抽象布局图
 
 **Agent 修改：**
-> 用户：「把儿童活动区增加到 700㎡」
+
+> 用户：「把咖啡厅增加到 400㎡」  
 > 系统：更新面积 → 重算总面积 → 检查是否超标 → 刷新图表
+
+### Screenshots
+
+| Analyze | Adjacency graph | Agent chat |
+|:---:|:---:|:---:|
+| ![Analyze result](screenshots/01-analyze-result.png) | ![Graph](screenshots/02-graph-layout.png) | ![Agent chat](screenshots/03-agent-chat.png) |
+
+![Abstract layout](screenshots/03b-abstract-layout.png)
 
 ## What I Learned
 
 - AI Product 不是「调 API」，而是设计 LLM + 确定性系统的协作
 - 建筑领域知识可以直接变成数据模型和规则引擎
 - Agent 的核心是「有状态的迭代」，不是一次性问答
+- **部署工程**：Streamlit Cloud 的 Secrets 必须在 **App Settings** 中 Save 才会注入运行时；GitHub Actions Secrets 与 `.env` 不能替代线上配置
 
 ## Tech Stack
 
 Python · DeepSeek API · Pydantic · NetworkX · Matplotlib · Streamlit
+
+## Links
+
+- **GitHub：** https://github.com/Chunyiyie/spatial-brief-agent
+- **Live Demo：** https://spatial-brief-agent.streamlit.app（可在 [`DEMO_URL`](DEMO_URL) 更新为你的 App 地址）
+- **Case Study（本页）：** [CASE_STUDY.md](CASE_STUDY.md)
 
 ## Future Work
 
 - [ ] 更精确的布局算法（constraint programming）
 - [ ] 支持上传 PDF Brief
 - [ ] 多方案对比
-- [ ] 导出为 Excel / PDF 报告
+- [ ] 导出为 Excel / PDF 报告（见 [DAY_12_EXPORT.md](DAY_12_EXPORT.md)）
