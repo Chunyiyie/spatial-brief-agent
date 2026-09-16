@@ -308,20 +308,15 @@ def deployment_key_diagnostics() -> dict[str, str]:
 def missing_api_key_error_message() -> str:
     diag = deployment_key_diagnostics()
     hint = ""
+    hint = ""
     if diag["api_key_loaded"] == "否":
         hint = (
-            " 说明：有效 Secret 应出现在 /mount/.streamlit/secrets.toml（非 0 字节）"
-            "且 st.secrets 顶层键名含 DEEPSEEK_API_KEY。"
-            "若只有 .streamlit/secrets.toml 且 0B，表示 Streamlit Cloud 控制台 Secrets"
-            "尚未 Save 成功（不是 GitHub 仓库 Settings，也不是本地 .env）。"
-            '请打开 share.streamlit.io → 本 App → Settings → Secrets，'
-            '仅一行 DEEPSEEK_API_KEY = "sk-..." → Save → Reboot。'
+            " 请在左侧栏 **DeepSeek API Key** 粘贴 sk-...（仅本会话），"
+            "或在 share.streamlit.io → 本 App → Settings → Secrets 配置后 Reboot。"
         )
     return (
         "未设置 DEEPSEEK_API_KEY。"
-        " 本地请在 .env 中配置 DEEPSEEK_API_KEY；"
-        " Streamlit Cloud 请在 Manage app → Settings → Secrets 填写："
-        ' DEEPSEEK_API_KEY = "sk-..." 并 Reboot。'
+        " 本地用 .env；Cloud 用左侧栏粘贴或 Streamlit Secrets。"
         f" 诊断: api_key_loaded={diag['api_key_loaded']},"
         f" env={diag['env_DEEPSEEK_API_KEY']},"
         f" secrets.toml={diag['secrets_toml_on_disk']},"
