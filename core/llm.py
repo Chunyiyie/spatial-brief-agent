@@ -4,29 +4,23 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from core.models import SpatialPlan
+from core.settings import get_deepseek_api_key
 
 load_dotenv()
 
-def _get_client():
-    load_dotenv()
-    api_key = os.getenv("DEEPSEEK_API_KEY")
-
-    if not api_key:
-        try:
-            import streamlit as st
-            if "DEEPSEEK_API_KEY" in st.secrets:
-                api_key = st.secrets["DEEPSEEK_API_KEY"]
-        except Exception:
-            pass
-
+ddef _get_client():
+    api_key = get_deepseek_api_key()
     if not api_key:
         raise RuntimeError(
-            "未设置 DEEPSEEK_API_KEY。本地用 .env；Streamlit Cloud 用 Secrets。"
+            '未设置 DEEPSEEK_API_KEY。本地用 .env；'
+            'Streamlit Cloud 用 Secrets：DEEPSEEK_API_KEY = "sk-..." '
+            '或 [secrets] 小节下同名键。'
         )
     return OpenAI(
         api_key=api_key,
         base_url="https://api.deepseek.com",
     )
+
 
 SYSTEM_PROMPT = """
 你是一名建筑空间规划助手。

@@ -1,13 +1,9 @@
-import os
-
 import streamlit as st
 
-# Streamlit Cloud：把 Secrets 写进环境变量（必须在 import core 之前）
-try:
-    if "DEEPSEEK_API_KEY" in st.secrets:
-        os.environ["DEEPSEEK_API_KEY"] = st.secrets["DEEPSEEK_API_KEY"]
-except Exception:
-    pass
+from core.settings import apply_streamlit_secrets_to_environ
+
+apply_streamlit_secrets_to_environ()
+
 
 import matplotlib.pyplot as plt
 
