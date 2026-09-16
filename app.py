@@ -6,6 +6,7 @@ import streamlit as st
 from core.settings import (
     apply_streamlit_secrets_to_environ,
     get_deepseek_api_key,
+    inspect_secrets_toml_files,
     missing_api_key_error_message,
 )
 
@@ -74,10 +75,21 @@ def render_key_diagnostics_sidebar() -> None:
         )
         st.write(f"**磁盘 secrets.toml:** {'是' if _secrets_toml_on_disk() else '否'}")
         st.write(f"**Streamlit secrets 顶层键名:** {_streamlit_secret_top_keys_label()}")
+        for report in inspect_secrets_toml_files():
+            st.write(
+                f"**文件:** `{report['path']}` · "
+                f"{report['size_bytes']}B · 键 {report['toml_keys']} · "
+                f"行匹配 Key: {report['regex_can_read_key']}"
+            )
         if not api_key_loaded:
+            st.warning(
+                "Cloud 上「有 secrets.toml 但 st.secrets 为空」通常表示 "
+                "Secrets 编辑器里内容为空或 TOML 无效，并未 Save 成功。"
+            )
             st.caption(
-                "Cloud：Manage app → Settings → Secrets → "
-                'DEEPSEEK_API_KEY = "sk-..." → Save → Reboot'
+                "Manage app → Settings → Secrets，整段替换为仅一行：\n\n"
+                'DEEPSEEK_API_KEY = "sk-..."\n\n'
+                "Save → Reboot（确认是**当前这个 App**，不是 GitHub 仓库 Settings）"
             )
 
 
