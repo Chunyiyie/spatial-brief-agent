@@ -8,7 +8,7 @@ from core.settings import get_deepseek_api_key
 
 load_dotenv()
 
-ddef _get_client():
+def _get_client():
     api_key = get_deepseek_api_key()
     if not api_key:
         raise RuntimeError(
