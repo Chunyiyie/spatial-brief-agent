@@ -7,10 +7,17 @@ from core.models import SpatialPlan
 
 load_dotenv()
 
-client = OpenAI(
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
-    base_url="https://api.deepseek.com",
-)
+def _get_client():
+    load_dotenv()
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "未设置 DEEPSEEK_API_KEY。本地用 .env；Streamlit Cloud 用 Secrets。"
+        )
+    return OpenAI(
+        api_key=api_key,
+        base_url="https://api.deepseek.com",
+    )
 
 SYSTEM_PROMPT = """
 你是一名建筑空间规划助手。
@@ -61,7 +68,8 @@ def analyze_brief(project_brief: str) -> SpatialPlan:
     输入建筑 Brief，返回验证后的 SpatialPlan。
     """
 
-    response = client.chat.completions.create(
+    client = _get_client()
+    response = _get_client().chat.completions.create(
         model="deepseek-v4-flash",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -124,7 +132,7 @@ def modify_plan(current_plan: SpatialPlan, modification: str) -> SpatialPlan:
 请输出修改后的完整 JSON。
 """
 
-    response = client.chat.completions.create(
+    response = _get_client().chat.completions.create(
         model="deepseek-v4-flash",
         messages=[
             {"role": "system", "content": MODIFY_SYSTEM_PROMPT},
