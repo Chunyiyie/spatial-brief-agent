@@ -22,9 +22,10 @@
 - 输入自然语言建筑 Brief
 - AI 提取空间清单（名称、面积、用途）
 - 分析空间邻接关系（close / medium / far / avoid）
-- Python 规则引擎验证空间冲突
+- Python 规则引擎验证空间冲突（数据驱动规则表 + 面积检查）
 - 生成空间关系图和抽象布局图
 - 支持对话式修改方案（Agent Loop）
+- 导出 JSON / CSV / Markdown 报告
 
 ## 技术栈
 

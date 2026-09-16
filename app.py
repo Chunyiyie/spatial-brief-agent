@@ -3,6 +3,8 @@ from pathlib import Path
 
 import streamlit as st
 
+from core.export import plan_to_csv, plan_to_json, plan_to_markdown_report
+
 from core.settings import (
     bootstrap_api_key,
     get_deepseek_api_key,
@@ -18,6 +20,12 @@ from core.llm import analyze_brief
 from core.rules import check_relationships
 from core.visualize import draw_spatial_graph
 from core.layout import draw_spatial_layout
+
+st.set_page_config(
+    page_title="Spatial Brief Agent",
+    page_icon="🏛️",
+    layout="wide",
+)
 
 
 def show_deploy_diagnostics() -> bool:
@@ -94,6 +102,43 @@ def render_key_diagnostics_sidebar() -> None:
             )
 
 
+def render_export_section(plan) -> None:
+    """导出方案文件（放在主流程里、图表之前，避免被 pyplot 影响）。"""
+    safe_name = plan.project_name.replace(" ", "_").replace("/", "_")[:40] or "spatial_plan"
+    json_data = plan_to_json(plan)
+    csv_data = plan_to_csv(plan)
+    md_data = plan_to_markdown_report(plan)
+
+    with st.container(border=True):
+        st.subheader("Export")
+        st.caption("下载当前 SpatialPlan（JSON / CSV / Markdown）")
+        col_a, col_b, col_c = st.columns(3)
+        with col_a:
+            st.download_button(
+                label="Download JSON",
+                data=json_data,
+                file_name=f"{safe_name}.json",
+                mime="application/json",
+                key="export_json",
+            )
+        with col_b:
+            st.download_button(
+                label="Download CSV",
+                data=csv_data,
+                file_name=f"{safe_name}.csv",
+                mime="text/csv",
+                key="export_csv",
+            )
+        with col_c:
+            st.download_button(
+                label="Download Markdown",
+                data=md_data,
+                file_name=f"{safe_name}.md",
+                mime="text/markdown",
+                key="export_markdown",
+            )
+
+
 def render_plan(plan):
     """把 SpatialPlan 渲染到页面上。"""
 
@@ -157,12 +202,6 @@ def render_plan(plan):
     plt.close(layout_fig)
 
 
-st.set_page_config(
-    page_title="Spatial Brief Agent",
-    page_icon="🏛️",
-    layout="wide",
-)
-
 st.title("SPATIAL BRIEF AGENT")
 st.caption("把建筑需求书转换成结构化空间方案，并支持迭代修改")
 
@@ -219,8 +258,11 @@ if st.button("Analyze Brief", type="primary"):
                 "content": "已完成初始分析。你可以继续提出修改，例如：把儿童活动区增加到 700㎡。",
             }
         ]
+        st.rerun()
 
 if st.session_state.plan is not None:
+    render_export_section(st.session_state.plan)
+    st.divider()
     render_plan(st.session_state.plan)
 
     st.divider()
