@@ -1,8 +1,10 @@
+import os
+from pathlib import Path
+
 import streamlit as st
 
 from core.settings import (
     apply_streamlit_secrets_to_environ,
-    deployment_key_diagnostics,
     get_deepseek_api_key,
     missing_api_key_error_message,
 )
@@ -39,6 +41,44 @@ DEFAULT_BRIEF = """
 请分析这些空间之间的空间关系。
 请使用中文。
 """
+
+
+def _streamlit_secret_top_keys_label() -> str:
+    try:
+        keys = list(st.secrets.keys())
+    except Exception as exc:
+        return f"（读取失败: {exc}）"
+    if not keys:
+        return "（空，Cloud Secrets 可能未 Save/Reboot 或未绑在此 App）"
+    return str(keys)
+
+
+def _secrets_toml_on_disk() -> bool:
+    for path in (
+        Path("/mount/.streamlit/secrets.toml"),
+        Path("/.streamlit/secrets.toml"),
+        Path(".streamlit/secrets.toml"),
+    ):
+        if path.is_file():
+            return True
+    return False
+
+
+def render_key_diagnostics_sidebar() -> None:
+    api_key_loaded = bool(get_deepseek_api_key())
+    with st.expander("部署 / 密钥诊断", expanded=not api_key_loaded):
+        st.write(f"**API Key 已加载:** {'是' if api_key_loaded else '否'}")
+        st.write(
+            f"**环境变量 DEEPSEEK_API_KEY:** "
+            f"{'已设置' if os.getenv('DEEPSEEK_API_KEY') else '未设置'}"
+        )
+        st.write(f"**磁盘 secrets.toml:** {'是' if _secrets_toml_on_disk() else '否'}")
+        st.write(f"**Streamlit secrets 顶层键名:** {_streamlit_secret_top_keys_label()}")
+        if not api_key_loaded:
+            st.caption(
+                "Cloud：Manage app → Settings → Secrets → "
+                'DEEPSEEK_API_KEY = "sk-..." → Save → Reboot'
+            )
 
 
 def render_plan(plan):
@@ -114,17 +154,7 @@ st.title("SPATIAL BRIEF AGENT")
 st.caption("把建筑需求书转换成结构化空间方案，并支持迭代修改")
 
 with st.sidebar:
-    with st.expander("部署 / 密钥诊断", expanded=not get_deepseek_api_key()):
-        diag = deployment_key_diagnostics()
-        st.write(f"**API Key 已加载:** {diag['api_key_loaded']}")
-        st.write(f"**环境变量 DEEPSEEK_API_KEY:** {diag['env_DEEPSEEK_API_KEY']}")
-        st.write(f"**磁盘 secrets.toml:** {diag['secrets_toml_on_disk']}")
-        st.write(f"**Streamlit secrets 顶层键名:** {diag['streamlit_secret_top_keys']}")
-        if diag["api_key_loaded"] == "否":
-            st.caption(
-                "Cloud：Manage app → Settings → Secrets → "
-                'DEEPSEEK_API_KEY = "sk-..." → Save → Reboot'
-            )
+    render_key_diagnostics_sidebar()
 
 if "plan" not in st.session_state:
     st.session_state.plan = None
