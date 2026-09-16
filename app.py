@@ -4,14 +4,11 @@ from pathlib import Path
 import streamlit as st
 
 from core.settings import (
-    apply_streamlit_secrets_to_environ,
+    bootstrap_api_key,
     get_deepseek_api_key,
     inspect_secrets_toml_files,
     missing_api_key_error_message,
 )
-
-apply_streamlit_secrets_to_environ()
-
 
 import matplotlib.pyplot as plt
 
@@ -67,7 +64,7 @@ def _secrets_toml_on_disk() -> bool:
 
 def render_key_diagnostics_sidebar() -> None:
     api_key_loaded = bool(get_deepseek_api_key())
-    with st.expander("部署 / 密钥诊断", expanded=not api_key_loaded):
+    with st.expander("部署 / 密钥诊断", expanded=False):
         st.write(f"**API Key 已加载:** {'是' if api_key_loaded else '否'}")
         st.write(
             f"**环境变量 DEEPSEEK_API_KEY:** "
@@ -82,14 +79,8 @@ def render_key_diagnostics_sidebar() -> None:
                 f"行匹配 Key: {report['regex_can_read_key']}"
             )
         if not api_key_loaded:
-            st.warning(
-                "Cloud 上「有 secrets.toml 但 st.secrets 为空」通常表示 "
-                "Secrets 编辑器里内容为空或 TOML 无效，并未 Save 成功。"
-            )
             st.caption(
-                "Manage app → Settings → Secrets，整段替换为仅一行：\n\n"
-                'DEEPSEEK_API_KEY = "sk-..."\n\n'
-                "Save → Reboot（确认是**当前这个 App**，不是 GitHub 仓库 Settings）"
+                "Cloud Secrets 未生效时，请在上方 **DeepSeek API Key** 粘贴密钥（仅本会话）。"
             )
 
 
@@ -166,6 +157,19 @@ st.title("SPATIAL BRIEF AGENT")
 st.caption("把建筑需求书转换成结构化空间方案，并支持迭代修改")
 
 with st.sidebar:
+    st.subheader("API 密钥")
+    if "deepseek_api_key_override" not in st.session_state:
+        st.session_state.deepseek_api_key_override = ""
+    st.session_state.deepseek_api_key_override = st.text_input(
+        "DeepSeek API Key",
+        type="password",
+        value=st.session_state.deepseek_api_key_override,
+        placeholder="sk-...（Cloud 可在此粘贴）",
+        help="本地自动读取 .env。Streamlit Cloud 若 Secrets 未注入，在此粘贴即可使用 Analyze。",
+    )
+    bootstrap_api_key(st.session_state.deepseek_api_key_override)
+    if get_deepseek_api_key():
+        st.success("API Key 已就绪")
     render_key_diagnostics_sidebar()
 
 if "plan" not in st.session_state:

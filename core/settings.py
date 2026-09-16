@@ -119,7 +119,7 @@ def _collect_secret_candidates(root: Any, depth: int = 0) -> list[Any]:
 
 def _read_secrets_from_toml_files() -> str:
     for path in SECRETS_TOML_PATHS:
-        if not path.is_file():
+        if not path.is_file() or path.stat().st_size == 0:
             continue
 
         data, _parse_error = _load_toml_mapping(path)
@@ -201,10 +201,28 @@ def get_deepseek_api_key() -> str:
     return ""
 
 
+def bootstrap_api_key(session_override: str = "") -> None:
+    """Resolve API key from session override, .env, secrets files, or st.secrets."""
+    load_dotenv()
+
+    override = _normalize_secret_value(session_override)
+    if override:
+        os.environ[SECRET_KEY] = override
+        return
+
+    existing = _normalize_secret_value(os.getenv(SECRET_KEY))
+    if existing:
+        return
+
+    for resolver in (_read_secrets_from_toml_files, _read_from_streamlit_secrets):
+        resolved = resolver()
+        if resolved:
+            os.environ[SECRET_KEY] = resolved
+            return
+
+
 def apply_streamlit_secrets_to_environ() -> None:
-    api_key = get_deepseek_api_key()
-    if api_key:
-        os.environ[SECRET_KEY] = api_key
+    bootstrap_api_key()
 
 
 def describe_streamlit_secret_keys() -> str:
@@ -220,9 +238,27 @@ def inspect_secrets_toml_files() -> list[dict[str, str]]:
 
     for path in SECRETS_TOML_PATHS:
         if not path.is_file():
+            reports.append(
+                {
+                    "path": str(path),
+                    "size_bytes": "—",
+                    "toml_keys": "（文件不存在）",
+                    "regex_can_read_key": "—",
+                }
+            )
             continue
 
         size = path.stat().st_size
+        if size == 0:
+            reports.append(
+                {
+                    "path": str(path),
+                    "size_bytes": "0",
+                    "toml_keys": "（空文件，不含任何 Secret）",
+                    "regex_can_read_key": "否",
+                }
+            )
+            continue
         data, parse_error = _load_toml_mapping(path)
         if data is not None:
             keys = _collect_mapping_keys(data)
@@ -272,11 +308,14 @@ def deployment_key_diagnostics() -> dict[str, str]:
 def missing_api_key_error_message() -> str:
     diag = deployment_key_diagnostics()
     hint = ""
-    if diag["secrets_toml_on_disk"] == "是" and diag["api_key_loaded"] == "否":
+    if diag["api_key_loaded"] == "否":
         hint = (
-            " 说明：Cloud 上常有空的 secrets.toml 占位文件；"
-            "st.secrets 为空表示 Manage app → Secrets 里尚未成功 Save 或 TOML 无效。"
-            "请只保留一行 DEEPSEEK_API_KEY = \"sk-...\"（英文引号），Save 后 Reboot。"
+            " 说明：有效 Secret 应出现在 /mount/.streamlit/secrets.toml（非 0 字节）"
+            "且 st.secrets 顶层键名含 DEEPSEEK_API_KEY。"
+            "若只有 .streamlit/secrets.toml 且 0B，表示 Streamlit Cloud 控制台 Secrets"
+            "尚未 Save 成功（不是 GitHub 仓库 Settings，也不是本地 .env）。"
+            '请打开 share.streamlit.io → 本 App → Settings → Secrets，'
+            '仅一行 DEEPSEEK_API_KEY = "sk-..." → Save → Reboot。'
         )
     return (
         "未设置 DEEPSEEK_API_KEY。"
