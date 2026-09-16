@@ -157,19 +157,27 @@ st.title("SPATIAL BRIEF AGENT")
 st.caption("把建筑需求书转换成结构化空间方案，并支持迭代修改")
 
 with st.sidebar:
-    st.subheader("API 密钥")
     if "deepseek_api_key_override" not in st.session_state:
         st.session_state.deepseek_api_key_override = ""
-    st.session_state.deepseek_api_key_override = st.text_input(
-        "DeepSeek API Key",
-        type="password",
-        value=st.session_state.deepseek_api_key_override,
-        placeholder="sk-...（Cloud 可在此粘贴）",
-        help="本地自动读取 .env。Streamlit Cloud 若 Secrets 未注入，在此粘贴即可使用 Analyze。",
-    )
     bootstrap_api_key(st.session_state.deepseek_api_key_override)
     if get_deepseek_api_key():
-        st.success("API Key 已就绪")
+        if st.session_state.deepseek_api_key_override.strip():
+            st.success("API Key 已就绪（本会话粘贴）")
+        else:
+            st.success("API Key 已就绪（.env / Streamlit Secrets）")
+    with st.expander("备用：手动粘贴 API Key", expanded=False):
+        st.caption(
+            "正式环境请在 Streamlit Cloud → Settings → Secrets 配置 "
+            "DEEPSEEK_API_KEY，Save 后 Reboot。仅当 Secrets 未生效时再在此粘贴。"
+        )
+        st.session_state.deepseek_api_key_override = st.text_input(
+            "DeepSeek API Key",
+            type="password",
+            value=st.session_state.deepseek_api_key_override,
+            placeholder="sk-...",
+            label_visibility="collapsed",
+        )
+        bootstrap_api_key(st.session_state.deepseek_api_key_override)
     render_key_diagnostics_sidebar()
 
 if "plan" not in st.session_state:
