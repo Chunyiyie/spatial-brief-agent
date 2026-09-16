@@ -1,21 +1,13 @@
-import os
-
-from dotenv import load_dotenv
 from openai import OpenAI
 
 from core.models import SpatialPlan
-from core.settings import get_deepseek_api_key
+from core.settings import get_deepseek_api_key, missing_api_key_error_message
 
-load_dotenv()
 
 def _get_client():
     api_key = get_deepseek_api_key()
     if not api_key:
-        raise RuntimeError(
-            '未设置 DEEPSEEK_API_KEY。本地用 .env；'
-            'Streamlit Cloud 用 Secrets：DEEPSEEK_API_KEY = "sk-..." '
-            '或 [secrets] 小节下同名键。'
-        )
+        raise RuntimeError(missing_api_key_error_message())
     return OpenAI(
         api_key=api_key,
         base_url="https://api.deepseek.com",
@@ -72,7 +64,7 @@ def analyze_brief(project_brief: str) -> SpatialPlan:
     """
 
     client = _get_client()
-    response = _get_client().chat.completions.create(
+    response = client.chat.completions.create(
         model="deepseek-v4-flash",
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -135,7 +127,8 @@ def modify_plan(current_plan: SpatialPlan, modification: str) -> SpatialPlan:
 请输出修改后的完整 JSON。
 """
 
-    response = _get_client().chat.completions.create(
+    client = _get_client()
+    response = client.chat.completions.create(
         model="deepseek-v4-flash",
         messages=[
             {"role": "system", "content": MODIFY_SYSTEM_PROMPT},
