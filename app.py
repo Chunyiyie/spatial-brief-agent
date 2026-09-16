@@ -1,6 +1,11 @@
 import streamlit as st
 
-from core.settings import apply_streamlit_secrets_to_environ
+from core.settings import (
+    apply_streamlit_secrets_to_environ,
+    deployment_key_diagnostics,
+    get_deepseek_api_key,
+    missing_api_key_error_message,
+)
 
 apply_streamlit_secrets_to_environ()
 
@@ -108,6 +113,19 @@ st.set_page_config(
 st.title("SPATIAL BRIEF AGENT")
 st.caption("把建筑需求书转换成结构化空间方案，并支持迭代修改")
 
+with st.sidebar:
+    with st.expander("部署 / 密钥诊断", expanded=not get_deepseek_api_key()):
+        diag = deployment_key_diagnostics()
+        st.write(f"**API Key 已加载:** {diag['api_key_loaded']}")
+        st.write(f"**环境变量 DEEPSEEK_API_KEY:** {diag['env_DEEPSEEK_API_KEY']}")
+        st.write(f"**磁盘 secrets.toml:** {diag['secrets_toml_on_disk']}")
+        st.write(f"**Streamlit secrets 顶层键名:** {diag['streamlit_secret_top_keys']}")
+        if diag["api_key_loaded"] == "否":
+            st.caption(
+                "Cloud：Manage app → Settings → Secrets → "
+                'DEEPSEEK_API_KEY = "sk-..." → Save → Reboot'
+            )
+
 if "plan" not in st.session_state:
     st.session_state.plan = None
 
@@ -121,8 +139,11 @@ brief = st.text_area(
 )
 
 if st.button("Analyze Brief", type="primary"):
-    with st.spinner("正在分析建筑需求..."):
-        st.session_state.plan = analyze_brief(brief)
+    if not get_deepseek_api_key():
+        st.error(missing_api_key_error_message())
+    else:
+        with st.spinner("正在分析建筑需求..."):
+            st.session_state.plan = analyze_brief(brief)
         st.session_state.messages = [
             {
                 "role": "assistant",

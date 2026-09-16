@@ -156,11 +156,40 @@ def apply_streamlit_secrets_to_environ() -> None:
         os.environ[SECRET_KEY] = api_key
 
 
+def describe_streamlit_secret_keys() -> str:
+    return _describe_streamlit_secret_keys()
+
+
+def _secrets_toml_exists() -> bool:
+    for path in (
+        Path("/mount/.streamlit/secrets.toml"),
+        Path("/.streamlit/secrets.toml"),
+        Path(".streamlit/secrets.toml"),
+    ):
+        if path.is_file():
+            return True
+    return False
+
+
+def deployment_key_diagnostics() -> dict[str, str]:
+    api_key = get_deepseek_api_key()
+    return {
+        "api_key_loaded": "是" if api_key else "否",
+        "env_DEEPSEEK_API_KEY": "已设置" if os.getenv(SECRET_KEY) else "未设置",
+        "secrets_toml_on_disk": "是" if _secrets_toml_exists() else "否",
+        "streamlit_secret_top_keys": describe_streamlit_secret_keys(),
+    }
+
+
 def missing_api_key_error_message() -> str:
+    diag = deployment_key_diagnostics()
     return (
         "未设置 DEEPSEEK_API_KEY。"
         " 本地请在 .env 中配置 DEEPSEEK_API_KEY；"
         " Streamlit Cloud 请在 Manage app → Settings → Secrets 填写："
         ' DEEPSEEK_API_KEY = "sk-..." 并 Reboot。'
-        f" 当前 Streamlit secrets 顶层键名: {_describe_streamlit_secret_keys()}"
+        f" 诊断: api_key_loaded={diag['api_key_loaded']},"
+        f" env={diag['env_DEEPSEEK_API_KEY']},"
+        f" secrets.toml={diag['secrets_toml_on_disk']},"
+        f" secrets 顶层键名={diag['streamlit_secret_top_keys']}"
     )
